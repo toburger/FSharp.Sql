@@ -1,19 +1,18 @@
 namespace FSharp.Sql
 
-//open System.Data.SqlClient
-open System.Data
 open System.Data.Common
 
 type SqlException(message, innerException: exn) =
     inherit exn(message, innerException)
     new message = SqlException(message, null)
 
-type SqlContext =
-    { Connection: DbConnection
-      Transaction: DbTransaction
+type SqlContext<'DbConnection, 'DbTransaction when 'DbConnection :> DbConnection and 'DbTransaction :> DbTransaction> =
+    { Connection: 'DbConnection
+      Transaction: 'DbTransaction
       CommandTimeout: int }
 
-type SqlAction<'a> = SqlAction of (SqlContext -> Async<Result<'a, exn>>)
+type SqlAction<'DbConnection, 'DbTransaction, 'a when 'DbConnection :> DbConnection and 'DbTransaction :> DbTransaction> =
+    SqlAction of (SqlContext<'DbConnection, 'DbTransaction> -> Async<Result<'a, exn>>)
 
 type Table = Table of schema: string * name:string
 with

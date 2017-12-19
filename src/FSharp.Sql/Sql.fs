@@ -19,7 +19,7 @@ module Sql =
 
     let failWithMessage msg = fail (FSharp.Sql.SqlException msg)
 
-    let bind (f: 'a -> SqlAction<'b>) (action: SqlAction<'a>): SqlAction<'b> =
+    let bind (f: 'a -> SqlAction<_, _, 'b>) (action: SqlAction<_, _, 'a>): SqlAction<_, _, 'b> =
         let newAction ctx = async {
             let! result = run ctx action
             match result with
@@ -32,7 +32,7 @@ module Sql =
         }
         SqlAction newAction
 
-    let apply (fAction: SqlAction<'a -> 'b>) (xAction: SqlAction<'a>): SqlAction<'b> =
+    let apply (fAction: SqlAction<_, _, 'a -> 'b>) (xAction: SqlAction<_, _, 'a>): SqlAction<_, _, 'b> =
         let newAction conn = async {
             let! fa = run conn fAction
             let! xa = run conn xAction
@@ -40,7 +40,7 @@ module Sql =
         }
         SqlAction newAction
 
-    let map (f: 'a -> 'b) (action: SqlAction<'a>): SqlAction<'b> =
+    let map (f: 'a -> 'b) (action: SqlAction<_, _, 'a>): SqlAction<_, _, 'b> =
         let newAction conn =
             run conn action
             |> Async.map (Result.bind (Ok << f))
@@ -111,7 +111,7 @@ module Sql =
     let logQuery sql =
         sprintf "#### BEGIN QUERY ####\n%s\n#### END QUERY ####" sql
 
-    let commandWith (parameters: (string * obj) list) sql (ctx: SqlContext) =
+    let commandWith (parameters: (string * obj) list) sql (ctx: SqlContext<_, _>) =
         let cmd = ctx.Connection.CreateCommand()
         cmd.CommandText <- sql
         cmd.Transaction <- ctx.Transaction
@@ -124,10 +124,10 @@ module Sql =
             use cmd = commandWith parameters sql ctx
             cmd.AsyncExecuteNonQuery())
 
-    let executeNonQuery =
-        executeNonQueryWith []
+    let executeNonQuery action =
+        executeNonQueryWith [] action
 
-    let executeScalarWith<'T> parameters sql: SqlAction<'T> =
+    let executeScalarWith<'T> parameters sql: SqlAction<_, _, 'T> =
         tryExecute (fun ctx -> async {
             use cmd = commandWith parameters sql ctx
             let! res = cmd.AsyncExecuteScalar()
