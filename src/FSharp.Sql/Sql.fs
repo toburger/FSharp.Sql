@@ -6,7 +6,7 @@ module Sql =
     open FSharp.Sql
     open System.Data
     open System.Data.Common
-    open FSharp.Reflection
+    open Microsoft.FSharp.Reflection
 
     let run conn (SqlAction action) =
         action conn
@@ -92,7 +92,7 @@ module Sql =
 
     let (|SqlException|_|) (exn: exn) =
         match exn with
-        | :? SqlClient.SqlException as exn ->
+        | :? DbException as exn ->
             Some exn
         | _ -> None
 
@@ -159,15 +159,6 @@ module Sql =
             | NonClustered -> "NONCLUSTERED"
         sprintf """CREATE %s INDEX [%s] ON [%s].[%s] (%s)""" indexType idxName schema table fields
         |> executeNonQuery
-
-    let toSqlDataReader (enumerable: seq<'T>) =
-        if FSharpType.IsRecord typeof<'T> then
-            let fields =
-                FSharpType.GetRecordFields(typeof<'T>)
-                |> Array.map (fun p -> p.Name)
-            FastMember.ObjectReader.Create(enumerable, fields)
-        else
-            FastMember.ObjectReader.Create(enumerable)
 
     let inline fromDBNull (x: obj) =
         if obj.Equals(x, System.DBNull.Value)

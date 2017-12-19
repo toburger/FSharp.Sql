@@ -7,6 +7,17 @@ type SqlAction<'a> = SqlAction<SqlConnection, SqlTransaction, 'a>
 
 [<RequireQualifiedAccess>]
 module Sql =
+    open Microsoft.FSharp.Reflection
+
+    let toSqlDataReader (enumerable: seq<'T>) =
+        if FSharpType.IsRecord typeof<'T> then
+            let fields =
+                FSharpType.GetRecordFields(typeof<'T>)
+                |> Array.map (fun p -> p.Name)
+            FastMember.ObjectReader.Create(enumerable, fields)
+        else
+            FastMember.ObjectReader.Create(enumerable)
+
     let bulkInsert (Table (schema, table)) data =
         let bulkInsert ctx =
             use bulk =
@@ -19,7 +30,7 @@ module Sql =
                      NotifyAfter = 50000,
                      BulkCopyTimeout = 0)
             bulk.SqlRowsCopied.Add(ignore)
-            use rdr = Sql.toSqlDataReader data
+            use rdr = toSqlDataReader data
             bulk.WriteToServer(rdr) // do not use Async version, it's twice as slow
         Sql.tryExecute (async.Return << bulkInsert)
 
