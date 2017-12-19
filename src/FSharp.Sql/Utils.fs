@@ -1,7 +1,5 @@
 [<AutoOpen>]
-module Utils
-
-let konst f a _ = f a
+module internal Utils
 
 module Async =
     let singleton = async.Return

@@ -5,27 +5,27 @@ module Sql =
 
     open FSharp.Sql
     open System.Data
-    open System.Data.SqlClient
+    open System.Data.Common
     open FSharp.Reflection
 
     let run conn (SqlAction action) =
         action conn
 
     let ok x =
-        SqlAction (konst <| Async.singleton <| Ok x)
+        SqlAction (fun _ -> Async.singleton (Ok x))
 
     let fail exn =
-        SqlAction (konst <| Async.singleton <| Error exn)
+        SqlAction (fun _ -> Async.singleton (Error exn))
 
     let failWithMessage msg = fail (FSharp.Sql.SqlException msg)
 
     let bind (f: 'a -> SqlAction<'b>) (action: SqlAction<'a>): SqlAction<'b> =
-        let newAction conn = async {
-            let! result = run conn action
+        let newAction ctx = async {
+            let! result = run ctx action
             match result with
             | Ok r ->
                 let action = f r
-                let! result = run conn action
+                let! result = run ctx action
                 return result
             | Error xs ->
                 return Error xs
@@ -52,8 +52,8 @@ module Sql =
           CommandTimeout = 180 }
 
     /// Execute the SqlAction.
-    let execute connectionString action = async {
-        use conn = new SqlConnection(connectionString)
+    let execute (createConnection: unit -> #DbConnection) action = async {
+        use conn = createConnection ()
         conn.Open()
         let ctx = defaultCtx conn
         let! result = run ctx action
@@ -62,8 +62,8 @@ module Sql =
     }
 
     /// Execute the SqlAction in a transaction provided by initTransaction.
-    let executeWithInitTransaction initTransaction connectionString action = async {
-        use conn = new SqlConnection(connectionString)
+    let executeWithInitTransaction (createConnection: unit -> #DbConnection) initTransaction action = async {
+        use conn = createConnection ()
         conn.Open()
         use transaction = initTransaction conn
         let ctx =
@@ -72,17 +72,17 @@ module Sql =
         let! result = run ctx action
         match result with
         | Ok _ -> transaction.Commit()
-        | Core.Error _ -> transaction.Rollback()
+        | Error _ -> transaction.Rollback()
         conn.Close()
         return result
     }
 
     /// <summary>Execute the SqlAction in a transaction.</summary>
     /// <remarks>The transaction isolation level is "read uncommitted", which mimics the NOSQL behavior.</remarks>
-    let executeWithTransaction connectionString action =
-        executeWithInitTransaction
+    let executeWithTransaction createConnection action =
+        executeWithInitTransaction createConnection
             (fun conn -> conn.BeginTransaction(IsolationLevel.ReadUncommitted))
-            connectionString action
+            action
 
     let (|AggregateException|_|) (exn: exn) =
         match exn with
@@ -111,11 +111,12 @@ module Sql =
     let logQuery sql =
         sprintf "#### BEGIN QUERY ####\n%s\n#### END QUERY ####" sql
 
-    let commandWith (parameters: (string * obj) list) sql ctx =
-        let cmd = new SqlCommand(sql, ctx.Connection)
+    let commandWith (parameters: (string * obj) list) sql (ctx: SqlContext) =
+        let cmd = ctx.Connection.CreateCommand()
+        cmd.CommandText <- sql
         cmd.Transaction <- ctx.Transaction
         cmd.CommandTimeout  <- ctx.CommandTimeout
-        parameters |> List.iter (ignore << cmd.Parameters.Add << SqlParameter)
+        parameters |> List.iter (ignore << cmd.Parameters.Add)
         cmd
 
     let executeNonQueryWith parameters sql =
@@ -167,22 +168,6 @@ module Sql =
             FastMember.ObjectReader.Create(enumerable, fields)
         else
             FastMember.ObjectReader.Create(enumerable)
-
-    let bulkInsert (Table (schema, table)) data =
-        let bulkInsert ctx =
-            use bulk =
-                new SqlBulkCopy
-                    (connection = ctx.Connection,
-                     copyOptions = SqlBulkCopyOptions.Default,
-                     externalTransaction = ctx.Transaction,
-                     DestinationTableName = sprintf "[%s].[%s]" schema table,
-                     EnableStreaming = true,
-                     NotifyAfter = 50000,
-                     BulkCopyTimeout = 0)
-            bulk.SqlRowsCopied.Add(ignore)
-            use rdr = toSqlDataReader data
-            bulk.WriteToServer(rdr) // do not use Async version, it's twice as slow
-        tryExecute (Async.singleton << bulkInsert)
 
     let inline fromDBNull (x: obj) =
         if obj.Equals(x, System.DBNull.Value)

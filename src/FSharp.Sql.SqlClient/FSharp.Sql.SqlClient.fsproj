@@ -5,16 +5,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Utils.fs" />
     <Compile Include="Types.fs" />
-    <Compile Include="Sql.fs" />
-    <Compile Include="SqlBuilder.fs" />
-    <Compile Include="SqlExtras.fs" />
+    <Compile Include="SqlClient.fs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="FastMember" Version="1.1.0" />
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Sql\FSharp.Sql.fsproj" />
   </ItemGroup>
 
 </Project>

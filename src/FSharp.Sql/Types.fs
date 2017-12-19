@@ -1,14 +1,16 @@
 namespace FSharp.Sql
 
-open System.Data.SqlClient
+//open System.Data.SqlClient
+open System.Data
+open System.Data.Common
 
 type SqlException(message, innerException: exn) =
     inherit exn(message, innerException)
     new message = SqlException(message, null)
 
 type SqlContext =
-    { Connection: SqlConnection
-      Transaction: SqlTransaction
+    { Connection: DbConnection
+      Transaction: DbTransaction
       CommandTimeout: int }
 
 type SqlAction<'a> = SqlAction of (SqlContext -> Async<Result<'a, exn>>)
@@ -86,12 +88,10 @@ with override self.ToString() =
 
 [<AutoOpen>]
 module Extensions =
-    open System.Data
-
     let cancellationTokenOrDefault cancellationToken =
         defaultArg cancellationToken Async.DefaultCancellationToken
 
-    type SqlCommand with
+    type DbCommand with
         member self.AsyncExecuteScalar(?cancellationToken) =
             Async.AwaitTask (self.ExecuteScalarAsync(cancellationTokenOrDefault cancellationToken))
         member self.AsyncExecuteNonQuery(?cancellationToken) =
@@ -99,12 +99,6 @@ module Extensions =
         member self.AsyncExecuteReader(?cancellationToken) =
             Async.AwaitTask (self.ExecuteReaderAsync(cancellationTokenOrDefault cancellationToken))
 
-    type SqlBulkCopy with
-        member self.AsyncWriteToServer(rows: IDataReader, ?cancellationToken) =
-            Async.AwaitTask (self.WriteToServerAsync(rows, cancellationTokenOrDefault cancellationToken))
-        member self.AsyncWriteToServer(table: DataTable, ?cancellationToken) =
-            Async.AwaitTask (self.WriteToServerAsync(table, cancellationTokenOrDefault cancellationToken))
-
-    type SqlDataReader with
+    type DbDataReader with
         member self.AsyncRead(?cancellationToken) =
             Async.AwaitTask (self.ReadAsync(cancellationTokenOrDefault cancellationToken))
