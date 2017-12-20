@@ -1,17 +1,17 @@
 namespace FSharp.Sql
 
-open System.Data.Common
+open System.Data
 
 type SqlException(message, innerException: exn) =
     inherit exn(message, innerException)
     new message = SqlException(message, null)
 
-type SqlContext<'DbConnection, 'DbTransaction when 'DbConnection :> DbConnection and 'DbTransaction :> DbTransaction> =
+type SqlContext<'DbConnection, 'DbTransaction when 'DbConnection :> IDbConnection and 'DbTransaction :> IDbTransaction> =
     { Connection: 'DbConnection
       Transaction: 'DbTransaction
       CommandTimeout: int }
 
-type SqlAction<'DbConnection, 'DbTransaction, 'a when 'DbConnection :> DbConnection and 'DbTransaction :> DbTransaction> =
+type SqlAction<'DbConnection, 'DbTransaction, 'a when 'DbConnection :> IDbConnection and 'DbTransaction :> IDbTransaction> =
     SqlAction of (SqlContext<'DbConnection, 'DbTransaction> -> Async<Result<'a, exn>>)
 
 type Table = Table of schema: string * name:string
@@ -87,6 +87,8 @@ with override self.ToString() =
 
 [<AutoOpen>]
 module Extensions =
+    open System.Data.Common
+
     let cancellationTokenOrDefault cancellationToken =
         defaultArg cancellationToken Async.DefaultCancellationToken
 

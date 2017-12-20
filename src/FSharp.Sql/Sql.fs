@@ -16,7 +16,7 @@ module Sql =
     let fail exn =
         SqlAction (fun _ -> Async.singleton (Error exn))
 
-    let failWithMessage msg = fail (FSharp.Sql.SqlException msg)
+    let failWithMessage msg = fail (SqlException msg)
 
     let bind (f: 'a -> SqlAction<_, _, 'b>) (action: SqlAction<_, _, 'a>): SqlAction<_, _, 'b> =
         let newAction ctx = async {
@@ -51,7 +51,7 @@ module Sql =
           CommandTimeout = 180 }
 
     /// Execute the SqlAction.
-    let execute (createConnection: unit -> #DbConnection) action = async {
+    let execute (createConnection: unit -> #IDbConnection) action = async {
         use conn = createConnection ()
         conn.Open()
         let ctx = defaultCtx conn
@@ -61,7 +61,7 @@ module Sql =
     }
 
     /// Execute the SqlAction in a transaction provided by initTransaction.
-    let executeWithInitTransaction (createConnection: unit -> #DbConnection) initTransaction action = async {
+    let executeWithInitTransaction (createConnection: unit -> #IDbConnection) initTransaction action = async {
         use conn = createConnection ()
         conn.Open()
         use transaction = initTransaction conn
