@@ -30,9 +30,9 @@ let createUsersTable (): SqlAction<unit> =
     Command.create (Table "users") fields
     |> Sql.map ignore
 
-let insertData data: SqlAction<unit> =
+let insertUsersData users: SqlAction<unit> =
     let param name (value: obj) = SqliteParameter(name, value)
-    [ for id, name in data ->
+    [ for { Id = id; Name = name } in users ->
         Command.executeNonQueryWith
             [ param "id" (box id)
               param "name" (box name) ]
@@ -45,9 +45,9 @@ let dropUsersTable (): SqlAction<unit> =
     Command.drop (Table "users")
     |> Sql.map ignore
 
-let setup data (action: SqlAction<'a>): SqlAction<'a> = sql {
+let setup users (action: SqlAction<'a>): SqlAction<'a> = sql {
     do! createUsersTable ()
-    do! insertData data
+    do! insertUsersData users
     let! res = action
     do! dropUsersTable ()
     return res
@@ -63,15 +63,15 @@ let program = sql {
     return (count, users, user)
 }
 
-let data =
-    [ 1, "Tobias"
-      2, "Lorenz"
-      3, "Stefanie" ]
+let users =
+    [ { Id = 1; Name = "Tobias" }
+      { Id = 2; Name = "Lorenz" }
+      { Id = 3; Name = "Stefanie" } ]
 
 [<EntryPoint>]
 let main _ =
     program
-    |> setup data
+    |> setup users
     |> Sql.execute connectionCreator
     |> Async.RunSynchronously
     |> function
