@@ -37,10 +37,7 @@ let insertData data =
         Command.executeNonQueryWith
             [ param "id" (box id)
               param "name" (box name) ]
-            """INSERT INTO users
-                (id, name)
-               VALUES
-                (@id, @name)""" ]
+            "INSERT INTO users (id, name) VALUES (@id, @name)" ]
     // |> SqlExtras.Parallel
     |> SqlExtras.sequence
     |> Sql.map ignore
@@ -49,16 +46,21 @@ let dropUsersTable () =
     Command.drop (Table "users")
     |> Sql.map ignore
 
-/// Very contrived example, but the idea is to have a composable
-/// workflow of SQL actions, that can be combined together
-let program data = sql {
+let setup data action = sql {
     do! createUsersTable ()
     do! insertData data
+    let! res = action
+    do! dropUsersTable ()
+    return res
+}
+
+/// Very contrived example, but the idea is to have a composable
+/// workflow of SQL actions, that can be combined together
+let program = sql {
     let! count = getUserCount ()
     let! users = getUsers ()
     let! user = tryGetUser 1
     //let! user = tryGetUser -1
-    do! dropUsersTable ()
     return (count, users, user)
 }
 
@@ -69,7 +71,8 @@ let data =
 
 [<EntryPoint>]
 let main _ =
-    program data
+    program
+    |> setup data
     |> Sql.execute connectionCreator
     |> Async.RunSynchronously
     |> function
