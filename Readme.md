@@ -37,7 +37,7 @@ let setup data action = sql {
 }
 ```
 
-This allows also to compose the commands not only step by step, but you can pass a command also as parameter `action` (which could be the `program` from before).
+This allows us to compose the commands not only step by step, but you can pass a command also as parameter `action` (which could be the `program` from before).
 
 Finally you execute the program by running the following commands.
 
@@ -52,3 +52,34 @@ program
 ```
 
 The fundamental data type is an `SqlAction` which is technically a `Result` wrapped in an `Async` type.
+
+## Appendix
+
+If the above `program` code looks way too imperative to you, you could write it in a more monadic style (the `sql` computation expression under the hood does exactly the same):
+
+``` fsharp
+let (>>=) a b = Sql.bind b a
+
+let program =
+    getUserCount ()
+    >>= fun count ->
+    getUsers ()
+    >>= fun users ->
+    tryGetUser 1
+    >>= fun user ->
+    Sql.ok (count, users, user)k
+```
+
+Or in an applicative style:
+
+```fsharp
+let (<!>) = Sql.map
+let (<*>) = Sql.apply
+let tuple3 a b c = (a, b, c)
+
+let program =
+    tuple3 <!>
+        getUserCount () <*>
+        getUsers () <*>
+        tryGetUser 1
+```
