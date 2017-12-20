@@ -6,12 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Dapper.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Sql\FSharp.Sql.fsproj" />
+    <ProjectReference Include="..\FSharp.Sql.Dapper\FSharp.Sql.Dapper.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
