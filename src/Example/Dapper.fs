@@ -26,4 +26,4 @@ let queryWithMap<'Result> (map: Map<string, _>) query =
     let expandoDictionary = expando :> IDictionary<string, obj>
     for paramValue in map do
         expandoDictionary.Add(paramValue.Key, paramValue.Value :> obj)
-    queryWith expando query
+    queryWith<'Result> expando query

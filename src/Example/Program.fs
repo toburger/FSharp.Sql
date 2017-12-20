@@ -11,7 +11,7 @@ let getUsers () =
     Dapper.query<User> "SELECT id, name FROM users"
 
 let getUser id =
-    Dapper.queryWithMap
+    Dapper.queryWithMap<User>
         (Map ["id", id])
         "SELECT id, name FROM users WHERE id = @id"
 
@@ -28,14 +28,31 @@ let connectionString =
 let connectionCreator () =
     new SqlConnection(connectionString) :> IDbConnection
 
+/// Very contrived example, but the idea is to have a composable
+/// workflow of SQL actions, that can be combined together
+let program = sql {
+    let! users = getUsers ()
+    let! user =
+        users
+        |> Seq.tryHead
+        |> Option.map (fun user -> getUser user.Id)
+        |> Option.defaultValue (Sql.ok Seq.empty)
+        |> Sql.map Seq.tryHead
+    return (users, user)
+}
+
 [<EntryPoint>]
 let main _ =
-    getUsers ()
+    program
     |> Sql.execute connectionCreator
     |> Async.RunSynchronously
     |> function
-        | Ok users ->
+        | Ok (users, singleUser) ->
             for user in users do
                 printfn "%i: %s" user.Id user.Name
+            printfn "------------"
+            singleUser
+            |> Option.iter (fun user ->
+                printfn "The single user's name is %s" user.Name)
         | Error exn -> printfn "FAILURE: %s" exn.Message
     0
