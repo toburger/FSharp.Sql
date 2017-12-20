@@ -1,25 +1,24 @@
 ﻿module Dapper
 
 open System.Collections.Generic
+open System.Data
+open System.Dynamic
 open FSharp.Sql
 open Dapper
-open System.Dynamic
+
+type IDbConnection with
+    member self.AsyncQuery<'T>(query: string) =
+        Async.AwaitTask (self.QueryAsync<'T>(query))
+    member self.AsyncQuery<'T>(query: string, param: obj) =
+        Async.AwaitTask (self.QueryAsync<'T>(query, param))
 
 let query<'Result> (query: string) =
-    Sql.tryExecute (fun ctx -> async {
-        let! result =
-            ctx.Connection.QueryAsync<'Result>(query)
-            |> Async.AwaitTask
-        return result
-    })
+    Sql.tryExecute (fun ctx ->
+        ctx.Connection.AsyncQuery<'Result>(query))
 
 let queryWith<'Result> (param: obj) (query: string) =
-    Sql.tryExecute (fun ctx -> async {
-        let! result =
-            ctx.Connection.QueryAsync<'Result>(query, param)
-            |> Async.AwaitTask
-        return result
-    })
+    Sql.tryExecute (fun ctx ->
+        ctx.Connection.AsyncQuery<'Result>(query, param))
 
 let queryWithMap<'Result> (map: Map<string, _>) query =
     let expando = ExpandoObject()
