@@ -94,29 +94,3 @@ module Command =
     let rename (Table (oschema, otable)) (Table (nschema, ntable)) =
         sprintf "EXEC sp_rename '[%s].[%s]', '[%s].[%s]'" oschema otable nschema ntable
         |> executeNonQuery
-
-    let mergeWithStatistics parameters mergeQuery =
-        sprintf """DECLARE
-        @mergeResultsTable TABLE (MergeAction varchar(20));
-
-    DECLARE
-        @insertCount int,
-        @updateCount int,
-        @deleteCount int;
-
-    %s
-    OUTPUT $action INTO @mergeResultsTable;
-
-    SELECT @insertCount = [INSERT],
-           @updateCount = [UPDATE],
-           @deleteCount = [DELETE]
-    FROM (SELECT 'NOOP' MergeAction -- row for null merge into null
-          UNION ALL
-          SELECT * FROM @mergeResultsTable) mergeResultsPlusEmptyRow
-    PIVOT (COUNT(MergeAction)
-        FOR MergeAction IN ([INSERT],[UPDATE],[DELETE]))
-        AS mergeResultsPivot;
-
-    SELECT @insertCount Insertions, @updateCount Updates, @deleteCount Deletions;""" mergeQuery
-        |> readAllWith<Statistics> parameters
-        |> Sql.map (Seq.toList >> Seq.head)
