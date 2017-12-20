@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
-    <Compile Include="SqlClient.fs" />
+    <Compile Include="Commands.fs" />
   </ItemGroup>
 
   <ItemGroup>

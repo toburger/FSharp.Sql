@@ -6,7 +6,7 @@ open FSharp.Sql
 type SqlAction<'a> = SqlAction<SqlConnection, SqlTransaction, 'a>
 
 [<RequireQualifiedAccess>]
-module Sql =
+module Command =
     open Microsoft.FSharp.Reflection
 
     let toSqlDataReader (enumerable: seq<'T>) =
@@ -36,19 +36,19 @@ module Sql =
 
     let explain action: SqlAction<string> =
         sql {
-            let! _ = Sql.executeNonQuery "SET SHOWPLAN_XML ON"
+            let! _ = Command.executeNonQuery "SET SHOWPLAN_XML ON"
             let! (result: string) = action
-            let! _ = Sql.executeNonQuery "SET SHOWPLAN_XML OFF"
+            let! _ = Command.executeNonQuery "SET SHOWPLAN_XML OFF"
             return result
         }
 
     let explains actions: SqlAction<Result<string, exn> list> =
         sql {
-            let! _ = Sql.executeNonQuery "SET SHOWPLAN_XML ON"
+            let! _ = Command.executeNonQuery "SET SHOWPLAN_XML ON"
             let! results =
                 actions
                 |> SqlExtras.sequence
                 |> Sql.map Seq.toList
-            let! _ = Sql.executeNonQuery "SET SHOWPLAN_XML OFF"
+            let! _ = Command.executeNonQuery "SET SHOWPLAN_XML OFF"
             return results
         }

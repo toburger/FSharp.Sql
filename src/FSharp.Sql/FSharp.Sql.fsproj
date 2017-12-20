@@ -9,6 +9,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Sql.fs" />
     <Compile Include="SqlBuilder.fs" />
+    <Compile Include="Commands.fs" />
     <Compile Include="SqlExtras.fs" />
   </ItemGroup>
 
