@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="IDbConnection-Async" Version="1.1.2" />
-    <PackageReference Include="System.Data.Common" Version="4.3.0" />
   </ItemGroup>
 
 </Project>
