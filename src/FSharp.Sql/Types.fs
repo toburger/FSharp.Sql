@@ -9,7 +9,7 @@ type SqlException(message, innerException: exn) =
 type SqlContext =
     { Connection: IDbConnection
       Transaction: IDbTransaction
-      CommandTimeout: int }
+      CommandTimeout: int option }
 
 type SqlAction<'a> =
     SqlAction of (SqlContext -> Async<Result<'a, exn>>)

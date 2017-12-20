@@ -11,7 +11,7 @@ module Command =
         let cmd = ctx.Connection.CreateCommand()
         cmd.CommandText <- sql
         cmd.Transaction <- ctx.Transaction
-        cmd.CommandTimeout <- ctx.CommandTimeout
+        ctx.CommandTimeout |> Option.iter (fun t -> cmd.CommandTimeout <- t)
         parameters |> List.iter (cmd.Parameters.Add >> ignore)
         cmd
 

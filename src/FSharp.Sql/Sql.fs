@@ -48,7 +48,7 @@ module Sql =
     let defaultCtx conn =
         { Connection = conn
           Transaction = null
-          CommandTimeout = 180 }
+          CommandTimeout = Some 180 }
 
     let private withContext f action =
         SqlAction (fun ctx -> run (f ctx) action)
