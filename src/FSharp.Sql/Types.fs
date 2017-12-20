@@ -87,12 +87,13 @@ with override self.ToString() =
 
 [<AutoOpen>]
 module Extensions =
+    open System.Data
     open System.Data.Common
 
     let cancellationTokenOrDefault cancellationToken =
         defaultArg cancellationToken Async.DefaultCancellationToken
 
-    type DbCommand with
+    type IDbCommand with
         member self.AsyncExecuteScalar(?cancellationToken) =
             Async.AwaitTask (self.ExecuteScalarAsync(cancellationTokenOrDefault cancellationToken))
         member self.AsyncExecuteNonQuery(?cancellationToken) =

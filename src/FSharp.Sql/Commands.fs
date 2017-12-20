@@ -15,8 +15,7 @@ module Command =
     let executeNonQueryWith parameters sql =
         Sql.tryExecute (fun ctx ->
             use cmd = commandWith parameters sql ctx
-            //cmd.AsyncExecuteNonQuery())
-            Async.singleton (cmd.ExecuteNonQuery()))
+            cmd.AsyncExecuteNonQuery())
 
     let executeNonQuery action =
         executeNonQueryWith [] action
@@ -24,8 +23,7 @@ module Command =
     let executeScalarWith<'T> parameters sql: SqlAction<_, _, 'T> =
         Sql.tryExecute (fun ctx -> async {
             use cmd = commandWith parameters sql ctx
-            //let! res = cmd.AsyncExecuteScalar()
-            let res = cmd.ExecuteScalar()
+            let! res = cmd.AsyncExecuteScalar()
             return unbox<'T> res
         })
 
