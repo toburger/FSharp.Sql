@@ -20,69 +20,69 @@ module private Async =
         |> map ofObj
 
 type IDbConnection with
-    member self.AsyncQuerySingle<'T>(query: string) =
-        Async.AwaitTask(self.QuerySingleAsync<'T>(query))
-    member self.AsyncQuerySingleOrDefault<'T>(query: string) =
-        Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query))
-    member self.AsyncQuerySingleOrDefault<'T>(query: string, param: obj) =
-        Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query, param))
-    member self.AsyncQuerySingle<'T>(query: string, param: obj) =
-        Async.AwaitTask(self.QuerySingleAsync<'T>(query, param))
+    member self.AsyncQuerySingle<'T>(query: string, tn, tm) =
+        Async.AwaitTask(self.QuerySingleAsync<'T>(query, null, tn, Option.toNullable tm))
+    member self.AsyncQuerySingleOrDefault<'T>(query: string, tn, tm) =
+        Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query, null, tn, Option.toNullable tm))
+    member self.AsyncQuerySingleOrDefault<'T>(query: string, param: obj, tn, tm) =
+        Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query, param, tn, Option.toNullable tm))
+    member self.AsyncQuerySingle<'T>(query: string, param: obj, tn, tm) =
+        Async.AwaitTask(self.QuerySingleAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQueryFirst<'T>(query: string) =
-        Async.AwaitTask(self.QueryFirstAsync<'T>(query))
-    member self.AsyncQueryFirst<'T>(query: string, param: obj) =
-        Async.AwaitTask(self.QueryFirstAsync<'T>(query, param))
-    member self.AsyncQueryFirstOrDefault<'T>(query: string) =
-        Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query))
-    member self.AsyncQueryFirstOrDefault<'T>(query: string, param: obj) =
-        Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query, param))
+    member self.AsyncQueryFirst<'T>(query: string, tn, tm) =
+        Async.AwaitTask(self.QueryFirstAsync<'T>(query, null, tn, Option.toNullable tm))
+    member self.AsyncQueryFirst<'T>(query: string, param: obj, tn, tm) =
+        Async.AwaitTask(self.QueryFirstAsync<'T>(query, param, tn, Option.toNullable tm))
+    member self.AsyncQueryFirstOrDefault<'T>(query: string, tn, tm) =
+        Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query, null, tn, Option.toNullable tm))
+    member self.AsyncQueryFirstOrDefault<'T>(query: string, param: obj, tn, tm) =
+        Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQuery<'T>(query: string) =
-        Async.AwaitTask (self.QueryAsync<'T>(query))
-    member self.AsyncQuery<'T>(query: string, param: obj) =
-        Async.AwaitTask (self.QueryAsync<'T>(query, param))
+    member self.AsyncQuery<'T>(query: string, tn, tm) =
+        Async.AwaitTask (self.QueryAsync<'T>(query, (null: obj), tn, Option.toNullable tm))
+    member self.AsyncQuery<'T>(query: string, param: obj, tn, tm) =
+        Async.AwaitTask (self.QueryAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQueryMultiple(query: string) =
-        Async.AwaitTask(self.QueryMultipleAsync(query))
-    member self.AsyncQueryMultiple(query: string, param: obj) =
-        Async.AwaitTask(self.QueryMultipleAsync(query, param))
+    member self.AsyncQueryMultiple(query: string, tn, tm) =
+        Async.AwaitTask(self.QueryMultipleAsync(query, null, tn, Option.toNullable tm))
+    member self.AsyncQueryMultiple(query: string, param: obj, tn, tm) =
+        Async.AwaitTask(self.QueryMultipleAsync(query, param, tn, Option.toNullable tm))
 
 let private tryExecute f =
-    Sql.tryExecute (fun ctx -> f ctx.Connection)
+    Sql.tryExecute (fun ctx -> f ctx.Connection ctx.Transaction ctx.CommandTimeout)
 
 let query<'Result> (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuery<'Result>(query))
+    tryExecute (fun conn tn tm -> conn.AsyncQuery<'Result>(query, tn, tm))
 
 let queryMultiple (query: string) =
-    tryExecute (fun conn -> conn.AsyncQueryMultiple(query))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryMultiple(query, tn, tm))
 
 let querySingle<'Result> (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuerySingle<'Result>(query))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingle<'Result>(query, tn, tm))
 
 let tryQuerySingle<'Result> (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuerySingleOrDefault<'Result>(query))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingleOrDefault<'Result>(query, tn, tm))
 
 let queryFirst<'Result> (query: string) =
-    tryExecute (fun conn -> conn.AsyncQueryFirst<'Result>(query))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryFirst<'Result>(query, tn, tm))
 
 let queryWithParam<'Result> param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuery<'Result>(query, param))
+    tryExecute (fun conn tn tm -> conn.AsyncQuery<'Result>(query, param, tn, tm))
 
 let queryMultipleWithParam param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQueryMultiple(query, param))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryMultiple(query, param, tn, tm))
 
 let querySingleWithParam<'Result> param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuerySingle<'Result>(query, param))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingle<'Result>(query, param, tn, tm))
 
 let tryQuerySingleWithParam<'Result> param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQuerySingleOrDefault<'Result>(query, param))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingleOrDefault<'Result>(query, param, tn, tm))
 
 let queryFirstWithParam<'Result> param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQueryFirst<'Result>(query, param))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryFirst<'Result>(query, param, tn, tm))
 
 let tryQueryFirstWithParam<'Result> param (query: string) =
-    tryExecute (fun conn -> conn.AsyncQueryFirstOrDefault<'Result>(query, param))
+    tryExecute (fun conn tn tm-> conn.AsyncQueryFirstOrDefault<'Result>(query, param, tn, tm))
 
 let private ofMap (map: Map<string, _>) =
     let expando = ExpandoObject()
