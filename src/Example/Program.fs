@@ -29,9 +29,13 @@ let connectionCreator () =
     new SqlConnection(connectionString) :> IDbConnection
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     getUsers ()
     |> Sql.execute connectionCreator
     |> Async.RunSynchronously
-    |> printfn "%A"
-    0 // return an integer exit code
+    |> function
+        | Ok users ->
+            for user in users do
+                printfn "%i: %s" user.Id user.Name
+        | Error exn -> printfn "FAILURE: %s" exn.Message
+    0

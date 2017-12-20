@@ -6,25 +6,19 @@ open Dapper
 open System.Dynamic
 
 let query<'Result> (query: string): SqlAction<_, _, seq<'Result>> =
-    SqlAction (fun ctx -> async {
-        try
-            let! result =
-                ctx.Connection.QueryAsync<'Result>(query)
-                |> Async.AwaitTask
-            return Ok result
-        with exn ->
-            return Error exn
+    Sql.tryExecute (fun ctx -> async {
+        let! result =
+            ctx.Connection.QueryAsync<'Result>(query)
+            |> Async.AwaitTask
+        return result
     })
 
 let queryWith<'Result> (param: obj) (query: string) =
-    SqlAction (fun ctx -> async {
-        try
-            let! result =
-                ctx.Connection.QueryAsync<'Result>(query, param)
-                |> Async.AwaitTask
-            return Ok result
-        with exn ->
-            return Error exn
+    Sql.tryExecute (fun ctx -> async {
+        let! result =
+            ctx.Connection.QueryAsync<'Result>(query, param)
+            |> Async.AwaitTask
+        return result
     })
 
 let queryWithMap<'Result> (map: Map<string, _>) query =
