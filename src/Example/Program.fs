@@ -1,5 +1,4 @@
 ﻿open FSharp.Sql
-open System.Data
 open Microsoft.Data.Sqlite
 
 [<CLIMutable>]
@@ -7,31 +6,31 @@ type User =
     { Id: int
       Name: string }
 
-let getUsers () =
+let getUsers (): SqlAction<User seq> =
     Dapper.query<User> "SELECT id, name FROM users"
 
-let tryGetUser id =
+let tryGetUser id: SqlAction<User option> =
     Dapper.tryQuerySingleWithMap<User>
         (Map ["id", id])
         "SELECT id, name FROM users WHERE id = @id"
 
-let getUserCount () =
+let getUserCount (): SqlAction<int64> =
     Command.count (Table "users")
 
 let connectionString =
     """DataSource=:memory:"""
 
 let connectionCreator () =
-    new SqliteConnection(connectionString) :> IDbConnection
+    new SqliteConnection(connectionString)
 
-let createUsersTable () =
+let createUsersTable (): SqlAction<unit> =
     let fields =
         [ { Name = "id"; Type = Int }
           { Name = "name"; Type = Varchar(50) } ]
     Command.create (Table "users") fields
     |> Sql.map ignore
 
-let insertData data =
+let insertData data: SqlAction<unit> =
     let param name (value: obj) = SqliteParameter(name, value)
     [ for id, name in data ->
         Command.executeNonQueryWith
@@ -42,11 +41,11 @@ let insertData data =
     |> SqlExtras.sequence
     |> Sql.map ignore
 
-let dropUsersTable () =
+let dropUsersTable (): SqlAction<unit> =
     Command.drop (Table "users")
     |> Sql.map ignore
 
-let setup data action = sql {
+let setup data (action: SqlAction<'a>): SqlAction<'a> = sql {
     do! createUsersTable ()
     do! insertData data
     let! res = action
