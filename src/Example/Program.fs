@@ -36,13 +36,8 @@ let connectionCreator () =
 let program = sql {
     let! count = getUserCount ()
     let! users = getUsers ()
-    // This could be done much nicer with pattern matching,
-    // but I haven't implemented Combine on the SqlBuilder yet.
-    let! user =
-        users
-        |> Seq.tryHead
-        |> Option.map (fun user -> tryGetUser user.Id)
-        |> Option.defaultWith (fun _ -> Sql.ok None)
+    let! user = tryGetUser 1
+    //let! user = tryGetUser -1
     return (count, users, user)
 }
 
