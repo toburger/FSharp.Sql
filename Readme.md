@@ -67,7 +67,7 @@ let program =
     >>= fun users ->
     tryGetUser 1
     >>= fun user ->
-    Sql.ok (count, users, user)k
+    Sql.ok (count, users, user)
 ```
 
 Or in an applicative style:
