@@ -3,8 +3,6 @@
 open System.Data.SqlClient
 open FSharp.Sql
 
-type SqlAction<'a> = SqlAction<SqlConnection, SqlTransaction, 'a>
-
 [<RequireQualifiedAccess>]
 module Command =
     open Microsoft.FSharp.Reflection
@@ -22,9 +20,9 @@ module Command =
         let bulkInsert ctx =
             use bulk =
                 new SqlBulkCopy
-                    (connection = ctx.Connection,
+                    (connection = (ctx.Connection :?> SqlConnection),
                      copyOptions = SqlBulkCopyOptions.Default,
-                     externalTransaction = ctx.Transaction,
+                     externalTransaction = (ctx.Transaction :?> SqlTransaction),
                      DestinationTableName = (table.GetString()),
                      EnableStreaming = true,
                      NotifyAfter = 50000,

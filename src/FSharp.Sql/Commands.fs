@@ -7,7 +7,7 @@ module Command =
 
     let (|Table|) (table: Table) = table.GetString()
 
-    let commandWith (parameters: IDbDataParameter list) sql (ctx: SqlContext<_, _>) =
+    let commandWith (parameters: IDbDataParameter list) sql (ctx: SqlContext) =
         let cmd = ctx.Connection.CreateCommand()
         cmd.CommandText <- sql
         cmd.Transaction <- ctx.Transaction
@@ -23,7 +23,7 @@ module Command =
     let executeNonQuery action =
         executeNonQueryWith [] action
 
-    let executeScalarWith<'T> parameters sql: SqlAction<_, _, 'T> =
+    let executeScalarWith<'T> parameters sql: SqlAction<'T> =
         Sql.tryExecute (fun ctx -> async {
             use cmd = commandWith parameters sql ctx
             let! res = cmd.AsyncExecuteScalar()

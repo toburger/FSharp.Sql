@@ -7,9 +7,9 @@ type SqlActionBuilder() =
     member __.Delay(f) = f
     member __.Run(f) = f()
     member __.Zero() = Sql.ok ()
-    member __.TryFinally(SqlAction asyncResult, compensation : unit -> unit) : SqlAction<_, _, 'a> =
+    member __.TryFinally(SqlAction asyncResult, compensation : unit -> unit) : SqlAction<'a> =
         SqlAction (fun ctx -> async.TryFinally(asyncResult ctx, compensation))
-    member self.Using(resource : 'T when 'T :> System.IDisposable, binder : 'T -> SqlAction<_, _, 'a>) : SqlAction<_, _, 'a> =
+    member self.Using(resource : 'T when 'T :> System.IDisposable, binder : 'T -> SqlAction<'a>) : SqlAction<'a> =
         self.TryFinally(binder resource, fun _ -> resource.Dispose())
 
 [<AutoOpen>]

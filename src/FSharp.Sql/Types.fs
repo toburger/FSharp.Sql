@@ -6,13 +6,13 @@ type SqlException(message, innerException: exn) =
     inherit exn(message, innerException)
     new message = SqlException(message, null)
 
-type SqlContext<'DbConnection, 'DbTransaction when 'DbConnection :> IDbConnection and 'DbTransaction :> IDbTransaction> =
-    { Connection: 'DbConnection
-      Transaction: 'DbTransaction
+type SqlContext =
+    { Connection: IDbConnection
+      Transaction: IDbTransaction
       CommandTimeout: int }
 
-type SqlAction<'DbConnection, 'DbTransaction, 'a when 'DbConnection :> IDbConnection and 'DbTransaction :> IDbTransaction> =
-    SqlAction of (SqlContext<'DbConnection, 'DbTransaction> -> Async<Result<'a, exn>>)
+type SqlAction<'a> =
+    SqlAction of (SqlContext -> Async<Result<'a, exn>>)
 
 type Table =
     | Table of string
@@ -92,7 +92,6 @@ with override self.ToString() =
 
 [<AutoOpen>]
 module Extensions =
-    open System.Data
     open System.Data.Common
 
     let cancellationTokenOrDefault cancellationToken =

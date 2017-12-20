@@ -5,8 +5,8 @@ module SqlExtras =
 
     open FSharp.Sql
 
-    let startChild (sqlAction: SqlAction<_, _, 'a>): SqlAction<_, _, SqlAction<_, _, _>> =
-        let newAction (ctx: SqlContext<_, _>) = async {
+    let startChild (sqlAction: SqlAction<'a>): SqlAction<SqlAction<_>> =
+        let newAction (ctx: SqlContext) = async {
             let! res = Sql.run ctx sqlAction |> Async.StartChild
             return Ok (SqlAction (fun _ -> res))
         }
@@ -23,7 +23,7 @@ module SqlExtras =
                 return result
         }
 
-    let traverse f (xs: seq<SqlAction<_, _, _>>) =
+    let traverse f (xs: seq<SqlAction<_>>) =
         let innerFn ctx = async {
             let ys = ResizeArray()
             for x in xs do
@@ -36,7 +36,7 @@ module SqlExtras =
 
     let sequence x = traverse id x
 
-    let Parallel (xs: SqlAction<_, _, _> list) =
+    let Parallel (xs: SqlAction<_> list) =
         SqlAction (fun ctx -> async {
             let! result = Async.Parallel (List.map (Sql.run ctx) xs)
             let errors = Array.choose (function Error err -> Some err | _ -> None) result
