@@ -14,11 +14,16 @@ type SqlContext<'DbConnection, 'DbTransaction when 'DbConnection :> IDbConnectio
 type SqlAction<'DbConnection, 'DbTransaction, 'a when 'DbConnection :> IDbConnection and 'DbTransaction :> IDbTransaction> =
     SqlAction of (SqlContext<'DbConnection, 'DbTransaction> -> Async<Result<'a, exn>>)
 
-type Table = Table of schema: string * name:string
+type Table =
+    | Table of string
+    | TableWithSchema of schema: string * name:string
 with
-    override self.ToString() =
-        let (Table (schema, name)) = self
-        sprintf "[%s].[%s]" schema name
+    member self.GetString() =
+        match self with
+        | Table name ->
+            sprintf "[%s]" name
+        | TableWithSchema (schema, name) ->
+            sprintf "[%s].[%s]" schema name
 
 type Type =
     | Bit

@@ -18,14 +18,14 @@ module Command =
         else
             FastMember.ObjectReader.Create(enumerable)
 
-    let bulkInsert (Table (schema, table)) data =
+    let bulkInsert (table: Table) data =
         let bulkInsert ctx =
             use bulk =
                 new SqlBulkCopy
                     (connection = ctx.Connection,
                      copyOptions = SqlBulkCopyOptions.Default,
                      externalTransaction = ctx.Transaction,
-                     DestinationTableName = sprintf "[%s].[%s]" schema table,
+                     DestinationTableName = (table.GetString()),
                      EnableStreaming = true,
                      NotifyAfter = 50000,
                      BulkCopyTimeout = 0)

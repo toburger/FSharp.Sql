@@ -2,14 +2,17 @@
 
 [<RequireQualifiedAccess>]
 module Command =
+    open System.Data
     open Microsoft.FSharp.Reflection
 
-    let commandWith (parameters: (string * obj) list) sql (ctx: SqlContext<_, _>) =
+    let (|Table|) (table: Table) = table.GetString()
+
+    let commandWith (parameters: IDbDataParameter list) sql (ctx: SqlContext<_, _>) =
         let cmd = ctx.Connection.CreateCommand()
         cmd.CommandText <- sql
         cmd.Transaction <- ctx.Transaction
-        cmd.CommandTimeout  <- ctx.CommandTimeout
-        parameters |> List.iter (ignore << cmd.Parameters.Add)
+        cmd.CommandTimeout <- ctx.CommandTimeout
+        parameters |> List.iter (cmd.Parameters.Add >> ignore)
         cmd
 
     let executeNonQueryWith parameters sql =
@@ -32,26 +35,26 @@ module Command =
 
     let field name typ = { Name = name; Type = typ }
 
-    let createTableQuery (Table (schema, table)) (fields: Field list) =
+    let createTableQuery (Table table) (fields: Field list) =
         let fields = String.concat ", " (List.map string fields)
-        sprintf "CREATE TABLE [%s].[%s] (%s)" schema table fields
+        sprintf "CREATE TABLE %s (%s)" table fields
 
     let create table fields =
         createTableQuery table fields
         |> executeNonQuery
 
-    let count (Table (schema, table)) =
-        sprintf "SELECT COUNT(*) FROM [%s].[%s]" schema table
+    let count (Table table) =
+        sprintf "SELECT COUNT(*) FROM %s" table
         |> executeScalar
-        |> Sql.map int
+        |> Sql.map unbox<int64>
 
-    let createIndex (indexType: IndexType) idxName (Table (schema, table)) (fields: Field list) =
+    let createIndex (indexType: IndexType) idxName (Table table) (fields: Field list) =
         let fields = String.concat ", " (List.map (fun f -> sprintf "[%s]" f.Name) fields)
         let indexType =
             match indexType with
             | Clustered -> "CLUSTERED"
             | NonClustered -> "NONCLUSTERED"
-        sprintf """CREATE %s INDEX [%s] ON [%s].[%s] (%s)""" indexType idxName schema table fields
+        sprintf """CREATE %s INDEX [%s] ON %s (%s)""" indexType idxName table fields
         |> executeNonQuery
 
     let inline fromDBNull (x: obj) =
@@ -84,14 +87,14 @@ module Command =
         |> Array.map (fun f -> sprintf "[%s]" f.Name)
         |> String.concat ", "
 
-    let readAll<'T> (Table (schema, table)) =
-        sprintf "SELECT %s FROM [%s].[%s]" getFields<'T> schema table
+    let readAll<'T> (Table table) =
+        sprintf "SELECT %s FROM %s" getFields<'T> table
         |> readAllBy<'T>
 
-    let drop (Table (schema, table)) =
-        sprintf "DROP TABLE [%s].[%s]" schema table
+    let drop (Table table) =
+        sprintf "DROP TABLE %s" table
         |> executeNonQuery
 
-    let rename (Table (oschema, otable)) (Table (nschema, ntable)) =
-        sprintf "EXEC sp_rename '[%s].[%s]', '[%s].[%s]'" oschema otable nschema ntable
+    let rename (Table otable) (Table ntable) =
+        sprintf "EXEC sp_rename '%s', '%s'" otable ntable
         |> executeNonQuery
