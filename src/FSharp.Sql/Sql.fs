@@ -7,8 +7,8 @@ module Sql =
     open System.Data
     open System.Data.Common
 
-    let run conn (SqlAction action) =
-        action conn
+    let run ctx (SqlAction action) =
+        action ctx
 
     let ok x =
         SqlAction (fun _ -> Async.singleton (Ok x))
@@ -49,6 +49,17 @@ module Sql =
         { Connection = conn
           Transaction = null
           CommandTimeout = 180 }
+
+    let private withContext f action =
+        SqlAction (fun ctx -> run (f ctx) action)
+
+    let withTransaction transaction =
+        withContext (fun ctx ->
+            { ctx with Transaction = transaction })
+
+    let withCommandTimeout timeout =
+        withContext (fun ctx ->
+            { ctx with CommandTimeout = timeout })
 
     /// Execute the SqlAction.
     let execute (createConnection: unit -> #IDbConnection) action = async {
