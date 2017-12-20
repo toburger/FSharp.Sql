@@ -15,6 +15,9 @@ let getUser id =
         (Map ["id", id])
         "SELECT id, name FROM users WHERE id = @id"
 
+let getUserCount () =
+    Command.count (Table ("dbo", "users"))
+
 let connectionString =
     """Data Source=(localdb)\MSSQLLocalDB;
        Initial Catalog=FSharp.Sql;
@@ -31,6 +34,7 @@ let connectionCreator () =
 /// Very contrived example, but the idea is to have a composable
 /// workflow of SQL actions, that can be combined together
 let program = sql {
+    let! count = getUserCount ()
     let! users = getUsers ()
     let! user =
         users
@@ -38,7 +42,7 @@ let program = sql {
         |> Option.map (fun user -> getUser user.Id)
         |> Option.defaultValue (Sql.ok Seq.empty)
         |> Sql.map Seq.tryHead
-    return (users, user)
+    return (count, users, user)
 }
 
 [<EntryPoint>]
@@ -47,7 +51,9 @@ let main _ =
     |> Sql.execute connectionCreator
     |> Async.RunSynchronously
     |> function
-        | Ok (users, singleUser) ->
+        | Ok (count, users, singleUser) ->
+            printfn "Count of users: %i" count
+            printfn "------------"
             for user in users do
                 printfn "%i: %s" user.Id user.Name
             printfn "------------"

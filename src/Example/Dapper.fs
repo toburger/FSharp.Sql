@@ -5,7 +5,7 @@ open FSharp.Sql
 open Dapper
 open System.Dynamic
 
-let query<'Result> (query: string): SqlAction<_, _, seq<'Result>> =
+let query<'Result> (query: string) =
     Sql.tryExecute (fun ctx -> async {
         let! result =
             ctx.Connection.QueryAsync<'Result>(query)

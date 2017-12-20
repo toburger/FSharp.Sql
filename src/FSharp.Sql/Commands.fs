@@ -43,6 +43,7 @@ module Command =
     let count (Table (schema, table)) =
         sprintf "SELECT COUNT(*) FROM [%s].[%s]" schema table
         |> executeScalar
+        |> Sql.map int
 
     let createIndex (indexType: IndexType) idxName (Table (schema, table)) (fields: Field list) =
         let fields = String.concat ", " (List.map (fun f -> sprintf "[%s]" f.Name) fields)
