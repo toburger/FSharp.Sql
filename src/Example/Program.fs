@@ -10,8 +10,8 @@ type User =
 let getUsers () =
     Dapper.query<User> "SELECT id, name FROM users"
 
-let getUser id =
-    Dapper.queryWithMap<User>
+let tryGetUser id =
+    Dapper.tryQuerySingleWithMap<User>
         (Map ["id", id])
         "SELECT id, name FROM users WHERE id = @id"
 
@@ -36,12 +36,13 @@ let connectionCreator () =
 let program = sql {
     let! count = getUserCount ()
     let! users = getUsers ()
+    // This could be done much nicer with pattern matching,
+    // but I haven't implemented Combine on the SqlBuilder yet.
     let! user =
         users
         |> Seq.tryHead
-        |> Option.map (fun user -> getUser user.Id)
-        |> Option.defaultValue (Sql.ok Seq.empty)
-        |> Sql.map Seq.tryHead
+        |> Option.map (fun user -> tryGetUser user.Id)
+        |> Option.defaultWith (fun _ -> Sql.ok None)
     return (count, users, user)
 }
 
@@ -57,8 +58,10 @@ let main _ =
             for user in users do
                 printfn "%i: %s" user.Id user.Name
             printfn "------------"
-            singleUser
-            |> Option.iter (fun user ->
-                printfn "The single user's name is %s" user.Name)
+            match singleUser with
+            | Some user ->
+                printfn "The single user's name is %s" user.Name
+            | None ->
+                printfn "No single user was found"
         | Error exn -> printfn "FAILURE: %s" exn.Message
     0
