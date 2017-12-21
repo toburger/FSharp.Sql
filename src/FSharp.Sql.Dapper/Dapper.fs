@@ -20,31 +20,19 @@ module private Async =
         |> map ofObj
 
 type IDbConnection with
-    member self.AsyncQuerySingle<'T>(query: string, tn, tm) =
-        Async.AwaitTask(self.QuerySingleAsync<'T>(query, null, tn, Option.toNullable tm))
-    member self.AsyncQuerySingleOrDefault<'T>(query: string, tn, tm) =
-        Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query, null, tn, Option.toNullable tm))
     member self.AsyncQuerySingleOrDefault<'T>(query: string, param: obj, tn, tm) =
         Async.awaitObj (self.QuerySingleOrDefaultAsync<'T>(query, param, tn, Option.toNullable tm))
     member self.AsyncQuerySingle<'T>(query: string, param: obj, tn, tm) =
         Async.AwaitTask(self.QuerySingleAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQueryFirst<'T>(query: string, tn, tm) =
-        Async.AwaitTask(self.QueryFirstAsync<'T>(query, null, tn, Option.toNullable tm))
     member self.AsyncQueryFirst<'T>(query: string, param: obj, tn, tm) =
         Async.AwaitTask(self.QueryFirstAsync<'T>(query, param, tn, Option.toNullable tm))
-    member self.AsyncQueryFirstOrDefault<'T>(query: string, tn, tm) =
-        Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query, null, tn, Option.toNullable tm))
     member self.AsyncQueryFirstOrDefault<'T>(query: string, param: obj, tn, tm) =
         Async.awaitObj(self.QueryFirstOrDefaultAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQuery<'T>(query: string, tn, tm) =
-        Async.AwaitTask (self.QueryAsync<'T>(query, (null: obj), tn, Option.toNullable tm))
     member self.AsyncQuery<'T>(query: string, param: obj, tn, tm) =
         Async.AwaitTask (self.QueryAsync<'T>(query, param, tn, Option.toNullable tm))
 
-    member self.AsyncQueryMultiple(query: string, tn, tm) =
-        Async.AwaitTask(self.QueryMultipleAsync(query, null, tn, Option.toNullable tm))
     member self.AsyncQueryMultiple(query: string, param: obj, tn, tm) =
         Async.AwaitTask(self.QueryMultipleAsync(query, param, tn, Option.toNullable tm))
 
@@ -52,19 +40,19 @@ let private tryExecute f =
     Sql.tryExecute (fun ctx -> f ctx.Connection ctx.Transaction ctx.CommandTimeout)
 
 let query<'Result> (query: string) =
-    tryExecute (fun conn tn tm -> conn.AsyncQuery<'Result>(query, tn, tm))
+    tryExecute (fun conn tn tm -> conn.AsyncQuery<'Result>(query, null, tn, tm))
 
 let queryMultiple (query: string) =
-    tryExecute (fun conn tn tm -> conn.AsyncQueryMultiple(query, tn, tm))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryMultiple(query, null, tn, tm))
 
 let querySingle<'Result> (query: string) =
-    tryExecute (fun conn tn tm -> conn.AsyncQuerySingle<'Result>(query, tn, tm))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingle<'Result>(query, null, tn, tm))
 
 let tryQuerySingle<'Result> (query: string) =
-    tryExecute (fun conn tn tm -> conn.AsyncQuerySingleOrDefault<'Result>(query, tn, tm))
+    tryExecute (fun conn tn tm -> conn.AsyncQuerySingleOrDefault<'Result>(query, null, tn, tm))
 
 let queryFirst<'Result> (query: string) =
-    tryExecute (fun conn tn tm -> conn.AsyncQueryFirst<'Result>(query, tn, tm))
+    tryExecute (fun conn tn tm -> conn.AsyncQueryFirst<'Result>(query, null, tn, tm))
 
 let queryWithParam<'Result> param (query: string) =
     tryExecute (fun conn tn tm -> conn.AsyncQuery<'Result>(query, param, tn, tm))
