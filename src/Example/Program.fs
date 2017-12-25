@@ -48,9 +48,9 @@ let dropUsersTable (): SqlAction<unit> =
 let setup users (action: SqlAction<'a>): SqlAction<'a> = sql {
     do! createUsersTable ()
     do! insertUsersData users
-    let! res = action
+    let! result = action
     do! dropUsersTable ()
-    return res
+    return result
 }
 
 /// Very contrived example, but the idea is to have a composable

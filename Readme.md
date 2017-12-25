@@ -31,12 +31,12 @@ Another workflow could be the setup logic for testing the logic:
 
 ```fsharp
 // seq<User> -> SqlAction<'a> -> SqlAction<'a>
-let setup data action = sql {
+let setup users action = sql {
     do! createUsersTable ()
-    do! insertData data
-    let! res = action
+    do! insertUsersData users
+    let! result = action
     do! dropUsersTable ()
-    return res
+    return result
 }
 ```
 
@@ -46,7 +46,7 @@ Finally you execute the program by running the following commands.
 
 ```fsharp
 program
-|> setup data
+|> setup users
 |> Sql.execute connectionCreator
 |> Async.RunSynchronously
 |> function
