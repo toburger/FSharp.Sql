@@ -6,6 +6,7 @@ The execution is postponed till the end. You can compare it with the Async build
 A (very contrived) example could be the following code:
 
 ```fsharp
+// SqlAction<int64 * seq<User> * User option>
 let program = sql {
     let! count = getUserCount ()
     let! users = getUsers ()
@@ -19,6 +20,7 @@ You can define a set of operations inside the `sql` computation expression.
 `getUsers` looks as following, leveraging Dapper to retrieve Users from the Db:
 
 ```fsharp
+// unit -> SqlAction<seq<User>>
 let getUsers () =
     Dapper.query<User> "SELECT id, name FROM users"
 ```
@@ -28,6 +30,7 @@ let getUsers () =
 Another workflow could be the setup logic for testing the logic:
 
 ```fsharp
+// seq<User> -> SqlAction<'a> -> SqlAction<'a>
 let setup data action = sql {
     do! createUsersTable ()
     do! insertData data
