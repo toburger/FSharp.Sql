@@ -7,6 +7,7 @@ type SqlActionBuilder() =
     member __.Delay(f) = f
     member __.Run(f) = f()
     member __.Zero() = Sql.ok ()
+    member __.Combine(a, b) = Sql.bind b a
     member __.TryFinally(SqlAction asyncResult, compensation : unit -> unit) : SqlAction<'a> =
         SqlAction (fun ctx -> async.TryFinally(asyncResult ctx, compensation))
     member self.Using(resource : 'T when 'T :> System.IDisposable, binder : 'T -> SqlAction<'a>) : SqlAction<'a> =
