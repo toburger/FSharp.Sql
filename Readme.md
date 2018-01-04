@@ -1,4 +1,4 @@
-# FSharp.Sql
+# FSharp.Sql [![Build Status](https://travis-ci.org/toburger/FSharp.Sql.svg?branch=master)](https://travis-ci.org/toburger/FSharp.Sql)
 
 WIP - The idea is to have the ability to compose SQL commands together.  
 The execution is postponed till the end. You can compare it with the Async builder in F#, where no async operation is executed until you manually force it by calling `Async.RunSynchronously`.
