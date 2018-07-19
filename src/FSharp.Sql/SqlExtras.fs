@@ -23,17 +23,20 @@ module SqlExtras =
                 return result
         }
 
-    let traverse f (xs: seq<SqlAction<_>>) =
-        let innerFn ctx = async {
-            let ys = ResizeArray()
-            for x in xs do
-                let (SqlAction action) = x
-                let! r = action ctx
-                ys.Add (f r)
-            return Ok (ys :> seq<_>)
-        }
-        SqlAction innerFn
+    /// <remarks>
+    /// Not tail recursive!
+    /// </remarks>
+    let rec traverse f ls =
+        match ls with
+        | [] -> Sql.ok []
+        | x::xs ->
+            let hd = f x
+            let rest = traverse f xs
+            Sql.bind (fun h -> Sql.map (fun ls -> h::ls) rest) hd
 
+    /// <remarks>
+    /// Not tail recursive!
+    /// </remarks>
     let sequence x = traverse id x
 
     let Parallel (xs: SqlAction<_> list) =
