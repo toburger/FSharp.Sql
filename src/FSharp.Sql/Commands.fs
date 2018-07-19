@@ -77,7 +77,7 @@ module Command =
                     arr.[i] <- fromDBNull arr.[i]
                 yield unbox<'T> (init arr)
         }
-        Sql.tryExecute (Async.singleton << readAll)
+        Sql.tryExecute (async.Return << readAll)
 
     let readAllBy<'T> =
         readAllWith<'T> []

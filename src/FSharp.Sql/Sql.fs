@@ -7,18 +7,18 @@ module Sql =
     open System.Data
     open System.Data.Common
 
-    let run ctx (SqlAction action) =
+    let inline run ctx (SqlAction action) =
         action ctx
 
-    let ok x =
-        SqlAction (fun _ -> Async.singleton (Ok x))
+    let inline ok x =
+        SqlAction (fun _ -> async.Return (Ok x))
 
-    let fail exn =
-        SqlAction (fun _ -> Async.singleton (Error exn))
+    let inline fail exn =
+        SqlAction (fun _ -> async.Return (Error exn))
 
     let failWithMessage msg = fail (SqlException msg)
 
-    let bind (f: 'a -> SqlAction<'b>) (action: SqlAction<'a>): SqlAction<'b> =
+    let inline bind (f: 'a -> SqlAction<'b>) (action: SqlAction<'a>): SqlAction<'b> =
         let newAction ctx = async {
             let! result = run ctx action
             match result with
@@ -31,7 +31,7 @@ module Sql =
         }
         SqlAction newAction
 
-    let apply (fAction: SqlAction<'a -> 'b>) (xAction: SqlAction<'a>): SqlAction<'b> =
+    let inline apply (fAction: SqlAction<'a -> 'b>) (xAction: SqlAction<'a>): SqlAction<'b> =
         let newAction conn = async {
             let! fa = run conn fAction
             let! xa = run conn xAction
@@ -39,7 +39,7 @@ module Sql =
         }
         SqlAction newAction
 
-    let map (f: 'a -> 'b) (action: SqlAction<'a>): SqlAction<'b> =
+    let inline map (f: 'a -> 'b) (action: SqlAction<'a>): SqlAction<'b> =
         let newAction conn =
             run conn action
             |> Async.map (Result.bind (Ok << f))
